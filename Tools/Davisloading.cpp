@@ -1,7 +1,8 @@
-#include <Davisloading.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <Davisloading.hpp>
+
 //The class is supposed to deal with AEDAT 3.1 files.
 // To know more and to understand what is going on in the lines underneat 
 // please refer to page https://inivation.com/support/software/fileformat/#aedat-31
@@ -11,17 +12,21 @@ void skip_header(std::ifstream & file){
     std::string first_letter = "#";
     std::string line;
     std::getline(file,line);
+    int header_found = 0;
     while (first_letter=="#")
     {
         if(line=="#!END-HEADER\r"){
-            std::cout<<"Header successfully skipped";
+            std::cout<<"Header successfully skipped"<<std::endl;
+            header_found=1;
             break;
         }
         else{
                 std::getline(file,line);
+                first_letter = line[0];
         }
     }
-    std::cout<<"Header end not found";
+    if(header_found==0)
+        std::cout<<"Header end not found"<<std::endl;
 }
 
 int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <std::vector<unsigned short>> & frames,
@@ -32,11 +37,10 @@ int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <std::vect
     eventcapacity, eventnumber, eventvalid, next_read;
     next_read = eventcapacity*eventsize;
     unsigned char * event_head = new unsigned char [28];
-    if(file.eof())
-    {
+    file.read((char*) event_head, 28);
+    if(file.tellg()==EOF){   
         return -1;
     }
-    file.read((char*) event_head, 28);
     //The machine is supposed to be little endian.
     eventtype = (unsigned short) ((event_head[1]) << 8 | (event_head[0]));
     eventsource =  (unsigned short) ((event_head[3]) << 8 | (event_head[2]));
@@ -60,12 +64,13 @@ int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <std::vect
 
         for(int i=0; i<eventcapacity;i++){
             file.read((char*) data, eventsize);
+            std::vector<unsigned short> tmpframe;
             while(pixelcounter<eventsize){
-                std::vector<unsigned short> tmpframe;
                 tmpframe.push_back((unsigned short) ((data[(pixelcounter)+1]) << 8 |
                                                      (data[(pixelcounter)])));
                 pixelcounter += 2;
             }
+            frames.push_back(tmpframe);
             start_ts.push_back((unsigned int) ((data[7]) << 24 | (data[6]<<16)|
                                                (data[5]) << 8  | (data[4])));
             end_ts.push_back((unsigned int) ((data[11]) << 24 | (data[10]<<16)|
@@ -101,14 +106,16 @@ DAVISFrames::DAVISFrames(std::string fn, int dimx, int dimy){
     aedat_file.open(filename);
     if(!aedat_file.is_open())
     {
-        std::cout<<"Huston we have a problem! File not found or inaccessible";
+        std::cout<<"Huston we have a problem! File not found or inaccessible"<<std::endl;
     }
     else{
         skip_header(aedat_file);
-        while(!eof_flag){
+        while(!(eof_flag)){
             eof_flag = read_frames(aedat_file, xdim, ydim, frames, start_ts, end_ts);
         }
 
     }
+    aedat_file.close();
+
 }
 

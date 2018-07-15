@@ -1,6 +1,6 @@
+#ifndef DAVISLOADING_HPP
+#define DAVISLOADING_HPP
 #include <vector>
-
-
 
 class DAVISFrames {
     /* Obj loading frames from AEDAT 3.1 Davis sensors */
@@ -17,3 +17,5 @@ class DAVISFrames {
     int xdim, ydim;     /* xdim and ydim are the camera dimension in pixel */
 
 };
+
+#endif
