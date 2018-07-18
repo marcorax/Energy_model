@@ -9,7 +9,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/marcorax93/Repositories/Energy_model/Prova",
+            "program": "/home/marcorax93/Repositories/Energy_model/Build/Prova",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
