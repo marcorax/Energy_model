@@ -1,4 +1,4 @@
-#define TEST_FILE "Test Files/Frames_L_Moving_Bar-2018_03_06_17_04_05.aedat"
+#define TEST_FILE "/home/marcorax93/Repositories/Energy_model/Test Files/Frames_L_Moving_Bar-2018_03_06_17_04_05.aedat"
 #define XDIM 240
 #define YDIM 180
 
