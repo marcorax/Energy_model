@@ -36,7 +36,12 @@
         "utility": "cpp",
         "string": "cpp",
         "csetjmp": "cpp",
-        "cstring": "cpp"
+        "cstring": "cpp",
+        "complex": "cpp",
+        "cstddef": "cpp",
+        "ctime": "cpp",
+        "deque": "cpp",
+        "iomanip": "cpp"
     },
     "code-runner.executorMap":{
         "cpp":"cd $dir && g++ -g $fileName -o $fileNameWithoutExt Tools/Davisloading.cpp -I$dir/Tools -O2 /usr/lib/x86_64-linux-gnu/libOpenCL.so.1 && $dir$fileNameWithoutExt"

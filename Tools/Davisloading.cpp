@@ -1,6 +1,10 @@
+#define  MAX16UIValue 65536 //The max decimal number that can be represented using unsigned 16 bit integers
+//It is used to normalize pixel value to be portraied as float going from 0 to 1
+
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <opencv2/opencv.hpp>
 #include <Davisloading.hpp>
 
 //The class is supposed to deal with AEDAT 3.1 files.
@@ -29,7 +33,7 @@ void skip_header(std::ifstream & file){
         std::cout<<"Header end not found"<<std::endl;
 }
 
-int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <std::vector<unsigned short>> & frames,
+int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <cv::Mat> & frames,
     std::vector <unsigned int> & start_ts,
     std::vector <unsigned int> & end_ts){
     unsigned short eventtype, eventsource;
@@ -61,13 +65,22 @@ int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <std::vect
 
     if(eventtype == 2){
     unsigned int pixelcounter=36;
+    int posx = 0;
+    int posy = 0;
 
         for(int i=0; i<eventcapacity;i++){
             file.read((char*) data, eventsize);
-            std::vector<unsigned short> tmpframe;
+            posx=0;
+            posy=0;
+            cv::Mat tmpframe(YDIM, XDIM, CV_32F);
             while(pixelcounter<eventsize){
-                tmpframe.push_back((unsigned short) ((data[(pixelcounter)+1]) << 8 |
-                                                     (data[(pixelcounter)])));
+                tmpframe.at<float>(posy,posx)=((float) ((data[(pixelcounter)+1]) << 8 |
+                                                     (data[(pixelcounter)])))/(float) MAX16UIValue;
+                posx++;
+                if(posx==XDIM){
+                    posx=0;
+                    posy++;
+                }
                 pixelcounter += 2;
             }
             frames.push_back(tmpframe);
