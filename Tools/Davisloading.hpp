@@ -20,4 +20,19 @@ class DAVISFrames {
 
 };
 
+class DAVISEvents {
+    /* Obj loading frames from AEDAT 3.1 Davis sensors */
+    //std::list frames;
+    public:
+    DAVISEvents(std::string fn);
+    std::vector <unsigned short> polarity;
+    std::vector <unsigned int> timestamp;
+    std::vector <unsigned int> x_addr;
+    std::vector <unsigned int> y_addr;
+    
+    private:
+    
+    std::string filename;
+
+};
 #endif
