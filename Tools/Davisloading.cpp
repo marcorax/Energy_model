@@ -154,6 +154,8 @@ int read_events(std::ifstream & file, std::vector <unsigned short> & polarity,
 
 
         }
+        return 0;
+
     }
 
     if(eventtype==0){ //special event, the class is not developed to deal with this type, here for debugging only.
