@@ -72,7 +72,7 @@ int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <cv::Mat> 
             posy=0;
             cv::Mat tmpframe(YDIM, XDIM, CV_16UC1);
             while(pixelcounter<eventsize){
-                tmpframe.at<ushort>(posy,posx)=((unsigned int) ((data[(pixelcounter)+1]) << 8 |
+                tmpframe.at<ushort>(posy,posx)=((unsigned short) ((data[(pixelcounter)+1]) << 8 |
                                                      (data[(pixelcounter)])));
                 posx++;
                 if(posx==XDIM){

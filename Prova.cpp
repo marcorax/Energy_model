@@ -38,7 +38,23 @@ int main(){
 
     cv::cvtColor(testobj.frames[picture], Newpic, CV_GRAY2RGB);
     std::cout<<"Frame at us: "<<testobj.end_ts[picture]<<std::endl;
-    cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
+    unsigned int t_halfspan = 1000;
+    for(unsigned int i = 0; i < testobj_e.polarity.size(); i++){
+        if(testobj_e.timestamp[i]>testobj.end_ts[picture]-t_halfspan && testobj_e.timestamp[i]<testobj.end_ts[picture]+t_halfspan){
+            if(testobj_e.polarity[i]==1){ //ON event, red by standards. Btw, [2] = Red, [1] = Green, [0] = Blue. I don't have any clues on why :I 
+                Newpic.at<cv::Vec3s>(testobj_e.y_addr[i],testobj_e.x_addr[i])[0] = (unsigned short) 0; 
+                Newpic.at<cv::Vec3s>(testobj_e.y_addr[i],testobj_e.x_addr[i])[1] = (unsigned short) 0; 
+                Newpic.at<cv::Vec3s>(testobj_e.y_addr[i],testobj_e.x_addr[i])[2] = (unsigned short) 65535; //max unsigned int value
+            }
+            else{   //OFF event, green by standards
+                Newpic.at<cv::Vec3s>(testobj_e.y_addr[i],testobj_e.x_addr[i])[0] = (unsigned short) 0; 
+                Newpic.at<cv::Vec3s>(testobj_e.y_addr[i],testobj_e.x_addr[i])[1] = (unsigned short) 65535; //max unsigned int value
+                Newpic.at<cv::Vec3s>(testobj_e.y_addr[i],testobj_e.x_addr[i])[2] = (unsigned short) 0;
+            }
+        }
+    }
+    cv::namedWindow("Display Image", cv::WINDOW_NORMAL);
+    cv::resizeWindow("Display Image", XDIM,YDIM);
     cv::imshow("Display Image", Newpic);
     cv::waitKey(0);
 
