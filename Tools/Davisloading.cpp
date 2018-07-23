@@ -10,14 +10,14 @@
 // please refer to page https://inivation.com/support/software/fileformat/#aedat-31
 
 
-void skip_header(std::ifstream & file){
+void skip_header(std::ifstream & file, const int & verbose){
     std::string first_letter = "#";
     std::string line;
     std::getline(file,line);
     int header_found = 0;
     while (first_letter=="#")
     {
-        if(line=="#!END-HEADER\r"){
+        if(line=="#!END-HEADER\r" && verbose){
             std::cout<<"Header successfully skipped"<<std::endl;
             header_found=1;
             break;
@@ -175,7 +175,7 @@ int read_events(std::ifstream & file, std::vector <unsigned short> & polarity,
 }
 
 
-DAVISFrames::DAVISFrames(std::string fn, int dimx, int dimy){
+DAVISFrames::DAVISFrames(std::string fn, int dimx, int dimy, const int & verbose){
     filename=fn;
     xdim=dimx;
     ydim=dimy;
@@ -187,7 +187,7 @@ DAVISFrames::DAVISFrames(std::string fn, int dimx, int dimy){
         std::cout<<"Huston we have a problem! File not found or inaccessible"<<std::endl;
     }
     else{
-        skip_header(aedat_file);
+        skip_header(aedat_file, verbose);
         while(!(eof_flag)){
             eof_flag = read_frames(aedat_file, xdim, ydim, frames, start_ts, end_ts);
         }
@@ -197,7 +197,7 @@ DAVISFrames::DAVISFrames(std::string fn, int dimx, int dimy){
 
 }
 
-DAVISEvents::DAVISEvents(std::string fn){
+DAVISEvents::DAVISEvents(std::string fn, const int & verbose){
     filename=fn;
     int eof_flag = 0;
     std::ifstream aedat_file;
@@ -207,7 +207,7 @@ DAVISEvents::DAVISEvents(std::string fn){
         std::cout<<"Huston we have a problem! File not found or inaccessible"<<std::endl;
     }
     else{
-        skip_header(aedat_file);
+        skip_header(aedat_file, verbose);
         while(!(eof_flag)){
             eof_flag = read_events(aedat_file, polarity, timestamp, x_addr, y_addr);
         }

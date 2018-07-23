@@ -8,7 +8,7 @@ class DAVISFrames {
     /* Obj loading frames from AEDAT 3.1 Davis sensors */
     //std::list frames;
     public:
-    DAVISFrames(std::string fn, int dimx, int dimy);
+    DAVISFrames(std::string, int , int , const int &);
     std::vector <cv::Mat> frames;
     std::vector <unsigned int> start_ts;
     std::vector <unsigned int> end_ts;
@@ -24,7 +24,7 @@ class DAVISEvents {
     /* Obj loading frames from AEDAT 3.1 Davis sensors */
     //std::list frames;
     public:
-    DAVISEvents(std::string fn);
+    DAVISEvents(std::string, const int &);
     std::vector <unsigned short> polarity;
     std::vector <unsigned int> timestamp;
     std::vector <unsigned int> x_addr;

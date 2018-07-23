@@ -1,1 +1,1 @@
-add_library(Tools Davisloading.cpp)
+add_library(Tools Davisloading.cpp Dataplotting.cpp)
