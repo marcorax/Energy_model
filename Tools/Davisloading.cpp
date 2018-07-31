@@ -1,4 +1,4 @@
-
+#include <stdlib.h> 
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -214,5 +214,62 @@ DAVISEvents::DAVISEvents(std::string fn, const int & verbose){
 
     }
     aedat_file.close();
+
+}
+
+/*Function for frame syncing, as at the moment of writing Davis sensors cannot be synchronized 
+(each frame is taken independently and only the timestamps use the same clock and reference)
+meaning that the setup might have different exposure time and consequentely frame rate per camera.
+Thus the two files might present a different number of frames.
+This function removes the less synchronized frames, pairing the number of pictures contained in each 
+DAVISframes object.
+Since it has been developed for Stereo Setups the function is expected to work with couples of objects,
+called respectively frames_r and frames_l
+*/  
+void sync_frames(DAVISFrames & frames_r, DAVISFrames & frames_l){
+unsigned int count;
+int time_diff, next_time_diff;
+
+    if(frames_l.frames.size()>frames_r.frames.size()){
+        for(unsigned int i=0; i<frames_r.frames.size(); i++){
+            count = 0;
+            time_diff = (int) frames_l.end_ts[i]-frames_r.end_ts[i];
+            next_time_diff = (int) frames_l.end_ts[i+1]-frames_r.end_ts[i];
+            //I want to pop out the most desinchronized frames, I count them in order to remove them right after
+            while(abs(time_diff)>abs(next_time_diff) && count+1<frames_l.end_ts.size()){
+                count++;
+                time_diff = (int) frames_l.end_ts[i+count]-frames_r.end_ts[i];
+                next_time_diff = (int) frames_l.end_ts[i+1+count]-frames_r.end_ts[i]; 
+            }
+
+            if(count>0){
+                frames_l.frames.erase(frames_l.frames.begin() + count + i);
+                frames_l.start_ts.erase(frames_l.start_ts.begin() + count + i);
+                frames_l.end_ts.erase(frames_l.end_ts.begin() + count + i);
+            }
+
+        }   
+    }
+
+    if(frames_l.frames.size()<frames_r.frames.size()){
+        for(unsigned int i=0; i<frames_l.frames.size(); i++){
+            count = 0;
+            time_diff = (int) frames_r.end_ts[i]-frames_l.end_ts[i];
+            next_time_diff = (int) frames_r.end_ts[i+1]-frames_l.end_ts[i];
+            //I want to pop out the most desinchronized frames, I count them in order to remove them right after
+            while(abs(time_diff)>abs(next_time_diff) && count+1<frames_r.end_ts.size()){
+                count++;
+                time_diff = (int) frames_r.end_ts[i+count]-frames_l.end_ts[i];
+                next_time_diff = (int) frames_r.end_ts[i+1+count]-frames_l.end_ts[i]; 
+            }
+
+            if(count>0){
+                frames_r.frames.erase(frames_r.frames.begin() + count + i);
+                frames_r.start_ts.erase(frames_r.start_ts.begin() + count + i);
+                frames_r.end_ts.erase(frames_r.end_ts.begin() + count + i);
+            }
+
+        }   
+    }  
 
 }

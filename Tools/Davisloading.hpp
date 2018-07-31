@@ -35,4 +35,7 @@ class DAVISEvents {
     std::string filename;
 
 };
+
+void sync_frames(DAVISFrames & , DAVISFrames & );
+
 #endif
