@@ -1,10 +1,27 @@
 #define _CRT_SECURE_NO_WARNINGS
-#define PROGRAM_FILE "Kernels/blank.cl"
+#define PROGRAM_FILE "../Kernels/blank.cl"
 #define KERNEL_FUNC "blank"
+
+#define AEDAT_FOLDER  "../TestFiles/"
+#define FRAMES_L "Frames_L_Moving_Bar-2018_03_06_17_04_05.aedat"
+#define EVENTS_L "Events_L_Moving_Bar-2018_03_06_17_04_05.aedat"
+#define FRAMES_R "Frames_R_Moving_Bar-2018_03_06_17_04_05.aedat"
+#define EVENTS_R "Events_R_Moving_Bar-2018_03_06_17_04_05.aedat"
+
+#define VERBOSE 1 //set to 0 di disable, 1 (or any other integer) to enable
+#define XDIM 240
+#define YDIM 180
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include <Davisloading.hpp>
+#include <opencv2/opencv.hpp>
+#include <Dataplotting.hpp>
 
 #ifdef MAC
 #include <OpenCL/cl.h>
@@ -38,6 +55,7 @@ cl_device_id create_device() {
 
    return dev;
 }
+
 
 /* Create program from a file and compile it */
 cl_program build_program(cl_context ctx, cl_device_id dev, const char* filename) {
@@ -106,7 +124,27 @@ int main() {
    const size_t host_origin[3] = {1*sizeof(float), 1, 0};
    const size_t region[3] = {4*sizeof(float), 4, 1};
    cl_mem matrix_buffer;
+   int framepos;
+   unsigned int t_halfspan = 1000;
 
+   DAVISFrames frames_l(std::string(AEDAT_FOLDER) + std::string(FRAMES_L), XDIM, YDIM, VERBOSE);
+   std::cout<< frames_l.frames.size()<<" extracted Frames from the left camera."<<std::endl;
+   DAVISEvents events_l(std::string(AEDAT_FOLDER) + std::string(EVENTS_L), VERBOSE);
+   std::cout<< events_l.polarity.size()<<" extracted Events from the left camera."<<std::endl;
+   DAVISFrames frames_r(std::string(AEDAT_FOLDER) + std::string(FRAMES_R), XDIM, YDIM, VERBOSE);
+   std::cout<< frames_r.frames.size()<<" extracted Frames from the left camera."<<std::endl;
+   DAVISEvents events_r(std::string(AEDAT_FOLDER) + std::string(EVENTS_R), VERBOSE);
+   std::cout<< events_r.polarity.size()<<" extracted Events from the left camera."<<std::endl;
+
+   sync_frames(frames_l, frames_r);
+//   std::cout<<"Left frames number after sync: "<<frames_l.frames.size()<<"  Right frames number after sync: "<<frames_r.frames.size()<<std::endl;
+
+
+//   std::cout<<"Waiting your input for the frame position: ";
+//   std::cin>>framepos;
+//   printDavisStereo(framepos, frames_l, frames_r, events_l, events_r, t_halfspan, XDIM, YDIM, VERBOSE);
+   
+   
    /* Initialize data */
    for(i=0; i<80; i++) {
       full_matrix[i] = i*1.0f;
@@ -120,6 +158,25 @@ int main() {
       perror("Couldn't create a context");
       exit(1);   
    }
+
+   /* Query the device to read useful informations */
+   size_t name_length;
+   cl_uint compute_units;
+   err = clGetDeviceInfo(device, CL_DEVICE_NAME, 0, NULL, &name_length);  
+   char device_name[name_length];
+   err = clGetDeviceInfo(device, CL_DEVICE_NAME, name_length*sizeof(char), &device_name, &name_length); 
+   if(err < 0) {
+      perror("Couldn't find device name");
+      exit(1);   
+   };
+
+   std::cout<<std::endl<<"Device name: "<<device_name<<std::endl;
+   err = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &compute_units, NULL); 
+   if(err < 0) {
+      perror("Couldn't find the number of compute devices:");
+      exit(1);   
+   };
+   std::cout<<std::endl<<"Number of compute devices: "<<compute_units<<std::endl;
 
    /* Build the program and create the kernel */
    program = build_program(context, device, PROGRAM_FILE);

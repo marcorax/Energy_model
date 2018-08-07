@@ -22,7 +22,7 @@
         },
         {
             "taskName": "run",
-            "args": ["${workspaceRoot}/Build/./Prova"]
+            "args": ["${workspaceRoot}/Build/./Host"]
 
         }
     ]
