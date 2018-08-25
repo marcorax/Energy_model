@@ -9,7 +9,7 @@ class DAVISFrames {
     //std::list frames;
     public:
     DAVISFrames(std::string, int , int , const int &);
-    std::vector <cv::Mat> frames;
+    std::vector <cv::Mat_<float>> frames;
     std::vector <unsigned int> start_ts;
     std::vector <unsigned int> end_ts;
     

@@ -14,8 +14,8 @@ void printDavisStereo(unsigned int framepos, DAVISFrames & frames_l, DAVISFrames
                       int XDIM, int YDIM, const int & verbose){
     
 
-    cv::Mat Newpicl(YDIM, XDIM, CV_16UC3);
-    cv::Mat Newpicr(YDIM, XDIM, CV_16UC3);
+    cv::Mat Newpicl(YDIM, XDIM, CV_32FC3);
+    cv::Mat Newpicr(YDIM, XDIM, CV_32FC3);
 
     
     if ( !frames_l.frames[framepos].data && !frames_r.frames[framepos].data)
@@ -35,28 +35,28 @@ void printDavisStereo(unsigned int framepos, DAVISFrames & frames_l, DAVISFrames
     for(unsigned int i = 0; i < events_l.polarity.size(); i++){
         if(events_l.timestamp[i]>frames_l.end_ts[framepos]-t_halfspan && events_l.timestamp[i]<frames_l.end_ts[framepos]+t_halfspan){
             if(events_l.polarity[i]==1){ //ON event, red by standards. Btw, [2] = Red, [1] = Green, [0] = Blue. I don't have any clues on why :I 
-                Newpicl.at<cv::Vec3s>(events_l.y_addr[i],events_l.x_addr[i])[0] = (unsigned short) 0; 
-                Newpicl.at<cv::Vec3s>(events_l.y_addr[i],events_l.x_addr[i])[1] = (unsigned short) 0; 
-                Newpicl.at<cv::Vec3s>(events_l.y_addr[i],events_l.x_addr[i])[2] = (unsigned short) 65535; //max unsigned int value
+                Newpicl.at<cv::Vec3f>(events_l.y_addr[i],events_l.x_addr[i])[0] = (float) 0; 
+                Newpicl.at<cv::Vec3f>(events_l.y_addr[i],events_l.x_addr[i])[1] = (float) 0; 
+                Newpicl.at<cv::Vec3f>(events_l.y_addr[i],events_l.x_addr[i])[2] = (float) 1; //max float value expected by Opencv
             }
             else{   //OFF event, green by standards
-                Newpicl.at<cv::Vec3s>(events_l.y_addr[i],events_l.x_addr[i])[0] = (unsigned short) 0; 
-                Newpicl.at<cv::Vec3s>(events_l.y_addr[i],events_l.x_addr[i])[1] = (unsigned short) 65535; //max unsigned int value
-                Newpicl.at<cv::Vec3s>(events_l.y_addr[i],events_l.x_addr[i])[2] = (unsigned short) 0;
+                Newpicl.at<cv::Vec3f>(events_l.y_addr[i],events_l.x_addr[i])[0] = (float) 0; 
+                Newpicl.at<cv::Vec3f>(events_l.y_addr[i],events_l.x_addr[i])[1] = (float) 1; //max float value expected by Opencv
+                Newpicl.at<cv::Vec3f>(events_l.y_addr[i],events_l.x_addr[i])[2] = (float) 0;
             }
         }
     }
      for(unsigned int i = 0; i < events_r.polarity.size(); i++){
         if(events_r.timestamp[i]>frames_r.end_ts[framepos]-t_halfspan && events_r.timestamp[i]<frames_r.end_ts[framepos]+t_halfspan){
             if(events_r.polarity[i]==1){ //ON event, red by standards. Btw, [2] = Red, [1] = Green, [0] = Blue. I don't have any clues on why :I 
-                Newpicr.at<cv::Vec3s>(events_r.y_addr[i],events_r.x_addr[i])[0] = (unsigned short) 0; 
-                Newpicr.at<cv::Vec3s>(events_r.y_addr[i],events_r.x_addr[i])[1] = (unsigned short) 0; 
-                Newpicr.at<cv::Vec3s>(events_r.y_addr[i],events_r.x_addr[i])[2] = (unsigned short) 65535; //max unsigned int value
+                Newpicr.at<cv::Vec3f>(events_r.y_addr[i],events_r.x_addr[i])[0] = (float) 0; 
+                Newpicr.at<cv::Vec3f>(events_r.y_addr[i],events_r.x_addr[i])[1] = (float) 0; 
+                Newpicr.at<cv::Vec3f>(events_r.y_addr[i],events_r.x_addr[i])[2] = (float) 1; //max float value expected by Opencv
             }
             else{   //OFF event, green by standards
-                Newpicr.at<cv::Vec3s>(events_r.y_addr[i],events_r.x_addr[i])[0] = (unsigned short) 0; 
-                Newpicr.at<cv::Vec3s>(events_r.y_addr[i],events_r.x_addr[i])[1] = (unsigned short) 65535; //max unsigned int value
-                Newpicr.at<cv::Vec3s>(events_r.y_addr[i],events_r.x_addr[i])[2] = (unsigned short) 0;
+                Newpicr.at<cv::Vec3f>(events_r.y_addr[i],events_r.x_addr[i])[0] = (float) 0; 
+                Newpicr.at<cv::Vec3f>(events_r.y_addr[i],events_r.x_addr[i])[1] = (float) 1; //max float value expected by Opencv
+                Newpicr.at<cv::Vec3f>(events_r.y_addr[i],events_r.x_addr[i])[2] = (float) 0;
             }
         }
     }

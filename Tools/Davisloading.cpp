@@ -4,6 +4,7 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <Davisloading.hpp>
+#define MAXVALUE 65535 //max decimal value of unsigned int (the original pixel type) Used to tormalize pixel values to 1
 
 //The class is supposed to deal with AEDAT 3.1 files.
 // To know more and to understand what is going on in the lines underneat 
@@ -31,7 +32,7 @@ void skip_header(std::ifstream & file, const int & verbose){
         std::cout<<"Header end not found"<<std::endl;
 }
 
-int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <cv::Mat> & frames,
+int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <cv::Mat_<float>> & frames,
     std::vector <unsigned int> & start_ts,
     std::vector <unsigned int> & end_ts){
     unsigned short eventtype, eventsource;
@@ -70,10 +71,10 @@ int read_frames(std::ifstream & file, int XDIM, int YDIM, std::vector <cv::Mat> 
             file.read((char*) data, eventsize);
             posx=0;
             posy=0;
-            cv::Mat tmpframe(YDIM, XDIM, CV_16UC1);
+            cv::Mat_<float> tmpframe(YDIM, XDIM, CV_32FC1);
             while(pixelcounter<eventsize){
-                tmpframe.at<ushort>(posy,posx)=((unsigned short) ((data[(pixelcounter)+1]) << 8 |
-                                                     (data[(pixelcounter)])));
+                tmpframe.at<float>(posy,posx)=((float) ((data[(pixelcounter)+1]) << 8 |
+                                                     (data[(pixelcounter)]))/MAXVALUE);
                 posx++;
                 if(posx==XDIM){
                     posx=0;
