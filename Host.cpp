@@ -200,14 +200,21 @@ int main() {
       perror("Couldn't create a kernel");
       exit(1);   
    }
+
+   /* Create a command queue */
+   queue = clCreateCommandQueueWithProperties(context, device, 0, &err);
+   if(err < 0) {
+      perror("Couldn't create a command queue");
+      exit(1);   
+   }; 
    
    /* Define the kernel space */
-   int KernelXDIM = XDIM ;
-   int KernelYDIM = YDIM + 4; //to have the global size as a multiple of 8
-   size_t global_size[2]; // Process the entire image
+   size_t KernelXDIM = XDIM ;
+   size_t KernelYDIM = YDIM + 4; //to have the global size as a multiple of 8
+   size_t global_size[2], local_size[2]; // Process the entire image
    global_size[0] = KernelXDIM;
    global_size[1] = KernelYDIM; 
-   size_t local_size [2]; //I have to find a way to set it up automatically
+   //I have to find a way to set it up automatically
    local_size[0] = 8; 
    local_size[1] = 8;
 
@@ -233,8 +240,8 @@ int main() {
    }
 
    /* Create image buffers to hold the results */
-   result_image_l = clCreateImage(context, CL_MEM_WRITE_ONLY | 
-      CL_MEM_ALLOC_HOST_PTR, &ResultFormat, &ResultDesc, NULL, &err);
+   result_image_l = clCreateImage(context, CL_MEM_WRITE_ONLY,
+    &ResultFormat, &ResultDesc, NULL, &err);
    if(err < 0) {
       perror("Couldn't create the result image buffer object");
       exit(1);   
@@ -263,7 +270,7 @@ int main() {
       perror("Couldn't set the left input image buffer as the kernel argument");
       exit(1);   
    }
-
+ 
    err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &result_image_l);
    if(err < 0) {
       perror("Couldn't set the left result image buffer as the kernel argument");
@@ -277,7 +284,7 @@ int main() {
    }
    
    err = clSetKernelArg(kernel, 3, 
-   sizeof(cl_float4)*(local_size[0]+additional_data[4])*(local_size[1]+additional_data[4]),
+   sizeof(cl_float4)*(local_size[0]+additional_data[3])*(local_size[1]+additional_data[3]),
    NULL);
    if(err < 0) {
       perror("Couldn't set the local image memory as the kernel argument");
@@ -291,13 +298,9 @@ int main() {
       perror("Couldn't set the additional data as the kernel argument");
       exit(1);   
    }
-
-   /* Create a command queue */
-   queue = clCreateCommandQueueWithProperties(context, device, 0, &err);
-   if(err < 0) {
-      perror("Couldn't create a command queue");
-      exit(1);   
-   };   
+ 
+   size_t origin[] = {0,0,0};
+   size_t region[] = {XDIM,YDIM,1};
 
    // Execute the OpenCL kernel on the list
 
@@ -308,56 +311,22 @@ int main() {
       exit(1);   
    }
 
-   size_t origin[] = {0,0,0};
-   size_t region[] = {XDIM,YDIM};
-
-   /* Enqueue command to write to the filter buffer 
-   err = clEnqueueWriteBuffer(queue, LGN_filter_buf, CL_TRUE, 0,
-         sizeof(LGN_filter), LGN_filter, 0, NULL, NULL); 
-   if(err < 0) {
-      perror("Couldn't write the filter to the buffer object");
-      exit(1);   
-   }
-
-   /* Enqueue command to write to the input image buffers 
-   err = clEnqueueWriteImage(queue, input_image_l, CL_TRUE, origin,
-         region, XDIM*sizeof(float), XDIM*YDIM*sizeof(float), DavisData[0],
-         0, NULL, NULL); 
-   if(err < 0) {
-      perror("Couldn't write input left image to the buffer object");
-      exit(1);   
-   }
-   err = clEnqueueWriteImage(queue, input_image_r, CL_TRUE, origin,
-         region, XDIM*sizeof(float), XDIM*YDIM*sizeof(float), DavisData[1],
-         0, NULL, NULL); 
-   if(err < 0) {
-      perror("Couldn't write input right image to the buffer object");
-      exit(1);   
-   }
-
    /* Enqueue command to read the results */
-   float * result[2];
+   cl_float4 result[XDIM*YDIM];
    err = clEnqueueReadImage(queue, result_image_l, CL_TRUE, origin,
-         region, XDIM*sizeof(float), XDIM*YDIM*sizeof(float), result[0],
+         region, 0, 0, &result,
          0, NULL, NULL); 
    if(err < 0) {
       perror("Couldn't read result left image from the buffer object");
       exit(1);   
    }
    
-   /* Display updated buffer 
-   for(i=0; i<8; i++) {
-      for(j=0; j<10; j++) {
-         printf("%6.1f", zero_matrix[j+i*10]);
-      }
-      printf("\n");
-   }
-*/
 
    /* Deallocate resources */
    clReleaseMemObject(LGN_filter_buf);
    clReleaseMemObject(input_image_l);
    clReleaseMemObject(result_image_l);
+   clReleaseMemObject(additional_data_buf);
    clReleaseKernel(kernel);
    clReleaseCommandQueue(queue);
    clReleaseProgram(program);

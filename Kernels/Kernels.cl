@@ -97,5 +97,6 @@ __kernel void convolute(
 			}
 		}
 		write_imagef(output, (int2)(idx,idy), sum);
+
 	}
 }
