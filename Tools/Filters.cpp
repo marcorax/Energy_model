@@ -3,14 +3,14 @@
 //each function needs to receive a preallocated filter 2D array with lszie linear dimensions
 
 
-void LGN(unsigned int & lsize, float ** filter)
+void LGN(float * filter, const unsigned int lsize)
 {
-    float normal_factor = lsize^2 - 1;
+    float normal_factor = (lsize*lsize) - 1;
     for(int i = 0; i<lsize; i++){
         for(int j = 0; j<lsize; j++){
-            filter[i][j] = -1 / normal_factor;            
+            filter[i+j*lsize] = -1 / normal_factor;            
         }
     }
 
-    filter[lsize/2][lsize/2] = 1;
+    filter[(lsize*lsize)/2] = 1;
 }

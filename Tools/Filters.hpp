@@ -4,4 +4,4 @@
 //each function needs to receive a preallocated filter 2D array with lszie linear dimensions
 
 
-void LGN(unsigned int & lsize, float ** filter);
+void LGN(float * filter, const unsigned int lsize);

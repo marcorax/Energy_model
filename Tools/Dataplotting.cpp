@@ -69,6 +69,6 @@ void printDavisStereo(unsigned int framepos, DAVISFrames & frames_l, DAVISFrames
     cv::resizeWindow("Right DAVIS picture: " + std::to_string(framepos), XDIM,YDIM);
     cv::imshow("Right DAVIS picture: " + std::to_string(framepos), Newpicr);
 
-    cv::waitKey(0);
+    //cv::waitKey(0);
     }
 }

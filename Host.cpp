@@ -111,6 +111,24 @@ cl_program build_program(cl_context ctx, cl_device_id dev, const char* filename)
    return program;
 }
 
+void save_results(std::string FileName, cv::Mat_<float> InputMat){
+    
+    cv::Mat tmp;
+    cv::normalize( InputMat, tmp, 0, 65535, cv::NORM_MINMAX, CV_16UC1); 
+    std::vector<int> compression_params;
+    compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(9);
+
+    try {
+        cv::imwrite(FileName+".png", tmp, compression_params);
+    }
+    catch (std::runtime_error& ex) {
+        fprintf(stderr, "Exception converting image to PNG format: %s\n", ex.what());
+    }
+
+    fprintf(stdout, "Saved PNG file with alpha data.\n");
+};
+
 int main() {
 
    /* OpenCL data structures */
@@ -122,31 +140,14 @@ int main() {
    cl_int i, j, err;
 
    /* Data and buffers */
-   float LGN_filter[LGN_RF_SIZE][LGN_RF_SIZE];
-   cl_mem LGN_filter_buf, input_image_l, result_image_l,
-   additional_data_buf;   
+   float LGN_filter[LGN_RF_SIZE*LGN_RF_SIZE];
+   cl_mem LGN_filter_buf, input_image_l, result_image_l_on, result_image_l_off,
+   input_image_r, result_image_r_on, result_image_r_off,additional_data_buf;   
    int framepos;
    unsigned int t_halfspan = 1000;
-   struct _cl_image_format DavisFormat, ResultFormat, tmpFormat;
-   struct _cl_image_desc DavisDesc, ResultDesc, tmpDesc;
 
-   DavisFormat.image_channel_data_type = CL_FLOAT;
-   DavisFormat.image_channel_order = CL_R;
+   LGN(LGN_filter, LGN_RF_SIZE);
 
-   DavisDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-   DavisDesc.image_width = XDIM;
-   DavisDesc.image_height = YDIM;
-   DavisDesc.image_depth = 1;
-   DavisDesc.image_array_size = 1;
-   DavisDesc.image_row_pitch = 0;
-   DavisDesc.image_slice_pitch = 0;
-   DavisDesc.num_mip_levels = 0;
-   DavisDesc.num_samples = 0;
-   DavisDesc.buffer = NULL;
-
-   ResultFormat = DavisFormat;
-   ResultDesc = DavisDesc;
-  
 
    DAVISFrames frames_l(std::string(AEDAT_FOLDER) + std::string(FRAMES_L), XDIM, YDIM, VERBOSE);
    std::cout<< frames_l.frames.size()<<" extracted Frames from the left camera."<<std::endl;
@@ -228,28 +229,36 @@ int main() {
 
    /* Create image buffers to hold the input pictures */ 
    // I don't know yet how to load multiple frames at once.
-   float* DavisData[2];
-   DavisData[0] = (float*)frames_l.frames[framepos].data;
-   DavisData[1] = (float*)frames_r.frames[framepos].data;
+   float * DavisLeftFrame, * DavisRightFrame;
+   DavisLeftFrame = (float*)frames_l.frames[framepos].data;
+   DavisRightFrame = (float*)frames_r.frames[framepos].data;
    
-   input_image_l = clCreateImage(context, CL_MEM_READ_ONLY | 
-      CL_MEM_COPY_HOST_PTR, &DavisFormat, &DavisDesc, DavisData[0], &err);
+   input_image_r = clCreateBuffer(context, CL_MEM_READ_ONLY | 
+      CL_MEM_COPY_HOST_PTR, sizeof(float)*XDIM*YDIM, DavisRightFrame, &err);
    if(err < 0) {
-      perror("Couldn't create the left input image buffer object");
+      perror("Couldn't create the input buffer object");
       exit(1);   
    }
 
    /* Create image buffers to hold the results */
-   result_image_l = clCreateImage(context, CL_MEM_WRITE_ONLY,
-    &ResultFormat, &ResultDesc, NULL, &err);
+   
+   result_image_r_on = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+    sizeof(float)*XDIM*YDIM, NULL, &err);
    if(err < 0) {
-      perror("Couldn't create the result image buffer object");
+      perror("Couldn't create the on result buffer object");
       exit(1);   
    }
 
+   result_image_r_off = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+    sizeof(float)*XDIM*YDIM, NULL, &err);
+   if(err < 0) {
+      perror("Couldn't create the on result buffer object");
+      exit(1);   
+   }
+   
    /* Create a buffer to hold filter and image informations that should be 
    computed only once */
-   unsigned int additional_data [4];
+   int additional_data [4];
    additional_data [0] = XDIM;
    additional_data [1] = YDIM;
    additional_data [2] = LGN_RF_SIZE;
@@ -265,26 +274,33 @@ int main() {
 
    /* Set buffers as arguments to the kernel */
  
-   err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_image_l);
+   err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_image_r);
    if(err < 0) {
       perror("Couldn't set the left input image buffer as the kernel argument");
       exit(1);   
    }
  
-   err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &result_image_l);
+   err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &result_image_r_on);
    if(err < 0) {
       perror("Couldn't set the left result image buffer as the kernel argument");
       exit(1);   
    }
 
-   err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &LGN_filter_buf);
+   err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &result_image_r_off);
+   if(err < 0) {
+      perror("Couldn't set the left result image buffer as the kernel argument");
+      exit(1);   
+   }
+
+
+   err = clSetKernelArg(kernel, 3, sizeof(cl_mem), &LGN_filter_buf);
    if(err < 0) {
       perror("Couldn't set the filter buffer as the kernel argument");
       exit(1);   
    }
    
-   err = clSetKernelArg(kernel, 3, 
-   sizeof(cl_float4)*(local_size[0]+additional_data[3])*(local_size[1]+additional_data[3]),
+   err = clSetKernelArg(kernel, 4, 
+   sizeof(float)*(local_size[0]+additional_data[3])*(local_size[1]+additional_data[3]),
    NULL);
    if(err < 0) {
       perror("Couldn't set the local image memory as the kernel argument");
@@ -293,7 +309,7 @@ int main() {
    in each work group.
    for reference look at this page: https://www.evl.uic.edu/kreda/gpu/image-convolution/ */
 
-   err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &additional_data_buf);
+   err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &additional_data_buf);
    if(err < 0) {
       perror("Couldn't set the additional data as the kernel argument");
       exit(1);   
@@ -310,28 +326,55 @@ int main() {
       perror("Couldn't enqueue the kernel");
       exit(1);   
    }
-
-   /* Enqueue command to read the results */
-   cl_float4 result[XDIM*YDIM];
-   err = clEnqueueReadImage(queue, result_image_l, CL_TRUE, origin,
-         region, 0, 0, &result,
-         0, NULL, NULL); 
+   
+    /* Enqueue command to read the results */
+   float result_on[XDIM*YDIM], result_off[XDIM*YDIM]; //computation on a color image it will cause a segmentation fault
+   err = clEnqueueReadBuffer(queue, result_image_r_on, CL_TRUE, 0,
+    sizeof(float)*XDIM*YDIM, &result_on, 0, NULL, NULL); 
    if(err < 0) {
       perror("Couldn't read result left image from the buffer object");
       exit(1);   
    }
+
+   err = clEnqueueReadBuffer(queue, result_image_r_off, CL_TRUE, 0,
+    sizeof(float)*XDIM*YDIM, &result_off, 0, NULL, NULL);
+   if(err < 0) {
+      perror("Couldn't read result left image from the buffer object");
+      exit(1);   
+   }
+
+   cv::Mat tmp_on(YDIM, XDIM, CV_32FC1, &result_on);
+   cv::Mat tmp_off(YDIM, XDIM, CV_32FC1, &result_off);
+
+   cv::namedWindow("Result ON of frames : " + std::to_string(framepos), cv::WINDOW_NORMAL);
+   cv::resizeWindow("Result ON of frames : " + std::to_string(framepos), XDIM, YDIM);
+   cv::imshow("Result ON of frames : " + std::to_string(framepos), tmp_on);
    
+   cv::namedWindow("Result OFF of frames : " + std::to_string(framepos), cv::WINDOW_NORMAL);
+   cv::resizeWindow("Result OFF of frames : " + std::to_string(framepos), XDIM, YDIM);
+   cv::imshow("Result OFF of frames : " + std::to_string(framepos), tmp_off);
+
 
    /* Deallocate resources */
    clReleaseMemObject(LGN_filter_buf);
-   clReleaseMemObject(input_image_l);
-   clReleaseMemObject(result_image_l);
+   clReleaseMemObject(input_image_r);
+   clReleaseMemObject(result_image_r_on);
+   clReleaseMemObject(result_image_r_off);
    clReleaseMemObject(additional_data_buf);
    clReleaseKernel(kernel);
    clReleaseCommandQueue(queue);
    clReleaseProgram(program);
    clReleaseContext(context);
+  
+   std::cout<<std::endl<<tmp_off.at<float>(118,7)<<" "<<tmp_off.at<float>(118,8)<<" "<<tmp_off.at<float>(118,9)<<" "<<std::endl;
+   std::cout<<std::endl<<tmp_off.at<float>(119,7)<<" "<<tmp_off.at<float>(119,8)<<" "<<tmp_off.at<float>(119,9)<<" "<<std::endl;
+   std::cout<<std::endl<<tmp_off.at<float>(120,7)<<" "<<tmp_off.at<float>(120,8)<<" "<<tmp_off.at<float>(120,9)<<" "<<std::endl;
 
+
+   save_results("../Result_r_OFF.png", tmp_off);
+
+   cv::waitKey(0); 
+   
    return 0;
 }
 
