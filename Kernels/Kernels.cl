@@ -1,5 +1,5 @@
-//I still have to introduce NAN values for borders 
-__kernel void convolute(
+//I still have to introduce NAN values for borders and to make it a real convolution by reversing the pixels
+__kernel void convol_ker(
 	__constant float * input, 
 	__global float * pos_output,
 	__global float * neg_output,
@@ -7,11 +7,11 @@ __kernel void convolute(
 	__local float * cached,
     __constant int * additional_data)
 {
-    int image_w = additional_data[0];
-    int image_h = additional_data[1];
-    int filter_size = additional_data[2];
-    int half_filter_size = additional_data[3];
-    int twice_half_filter_size = half_filter_size*2;
+    int image_w = get_global_size(0);
+    int image_h = get_global_size(1);
+    int filter_size = additional_data[0];
+    int half_filter_size = additional_data[1];
+    int twice_half_filter_size = additional_data[2];
     
 	const int idy = get_global_id(1);
 	const int idx = get_global_id(0);
@@ -20,12 +20,10 @@ __kernel void convolute(
 	const int myLocal = localRowOffset + get_local_id(0) + half_filter_size;		
 		
 	// copy my pixel
-	//checking if I'm not actually out of border
-	if(get_global_id(1) <= image_h - 1){
-		pos_output[idx + idy*image_w] = 0;
-		neg_output[idx + idy*image_w] = 0;
-		cached[ myLocal ] = input[idx + idy*image_w];
-		}
+	pos_output[idx + idy*image_w] = 0;
+	neg_output[idx + idy*image_w] = 0;
+	cached[ myLocal ] = input[idx + idy*image_w];
+	
 
 	/*
 	The pictures computed by this software have a resolution of 240x180
