@@ -4,6 +4,7 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <Davisloading.hpp>
+
 #define MAXVALUE 65535 //max decimal value of unsigned int (the original pixel type) Used to tormalize pixel values to 1
 
 //The class is supposed to deal with AEDAT 3.1 files.

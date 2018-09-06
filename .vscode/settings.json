@@ -41,9 +41,14 @@
         "cstddef": "cpp",
         "ctime": "cpp",
         "deque": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "atomic": "cpp",
+        "strstream": "cpp",
+        "chrono": "cpp",
+        "ratio": "cpp",
+        "thread": "cpp",
+        "cinttypes": "cpp",
+        "typeindex": "cpp"
     },
-    "code-runner.executorMap":{
-        "cpp":"cd $dir && g++ -g $fileName -o $fileNameWithoutExt Tools/Davisloading.cpp -I$dir/Tools -O2 /usr/lib/x86_64-linux-gnu/libOpenCL.so.1 && $dir$fileNameWithoutExt"
-    }
+    "cmake.buildDirectory":"${workspaceRoot}/Build"
 }

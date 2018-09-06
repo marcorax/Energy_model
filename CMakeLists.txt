@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
+set (CMAKE_CXX_STANDARD 11)
 
 project(energy-model)
 
@@ -12,5 +13,4 @@ add_subdirectory(Tools)
 add_executable(Host Host.cpp)
 
 target_link_libraries(Host Tools "${OpenCV_LIBS}" "${OpenCL_LIBRARY}")
-
 
