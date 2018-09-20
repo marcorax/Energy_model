@@ -72,6 +72,8 @@ void printDavisStereo(unsigned int framepos, DAVISFrames & frames_l, DAVISFrames
     //cv::waitKey(0);
     }
 }
+
+
 /*Function used to print fused rapresentation of on/off events or both negative/positive images, magnifing factor is handy when plotting
 small images like when checking filters*/
 
@@ -96,4 +98,12 @@ void printOnOffImages(std::string Windowmsg, cv::Mat_<float> on_image, cv::Mat_<
     cv::namedWindow(Windowmsg, cv::WINDOW_NORMAL);
     cv::resizeWindow(Windowmsg, on_image.cols*magnifingFactor, on_image.rows*magnifingFactor);
     cv::imshow(Windowmsg, Newpic);
+}
+
+void printImage(std::string Windowmsg, const cv::Mat_<float> &image, unsigned int magnifingFactor){
+    
+    cv::namedWindow(Windowmsg, cv::WINDOW_NORMAL);
+    cv::resizeWindow(Windowmsg, image.cols, image.rows);
+    cv::imshow(Windowmsg, image);
+
 }

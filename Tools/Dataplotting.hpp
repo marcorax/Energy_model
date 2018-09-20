@@ -8,4 +8,7 @@ void printDavisStereo(unsigned int, DAVISFrames &, DAVISFrames &, DAVISEvents &,
 
 void printOnOffImages(std::string Windowmsg, cv::Mat_<float> on_image, cv::Mat_<float> off_image, unsigned int magnifingFactor);
 
+void printImage(std::string Windowmsg, const cv::Mat_<float> &image, unsigned int magnifingFactor);
+
+
 #endif

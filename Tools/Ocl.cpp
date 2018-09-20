@@ -308,9 +308,15 @@ void convolution(cl_device_id &device, cl_context &context, cl_command_queue &qu
         std::cout<<"Couldn't read the OFF result left image from the buffer object : error code "<<err<<" "<<getErrorString(err)<<std::endl;
         exit(1);   
     }
+    
+    /* cv::Mat created by array are referenced to them, performing more than one 
+    convolution in the same program would cause data corruption, for this reason
+    I perform a deep copy of temporary matrices instead */
+    cv::Mat tmpON(YDIM, XDIM, CV_32FC1, ResultONArray);
+    cv::Mat tmpOFF(YDIM, XDIM, CV_32FC1, ResultOFFArray);
 
-    ResultON = cv::Mat(YDIM, XDIM, CV_32FC1, &ResultONArray);
-    ResultOFF = cv::Mat(YDIM, XDIM, CV_32FC1, &ResultOFFArray);
+    ResultON = tmpON.clone();
+    ResultOFF = tmpOFF.clone();
 
     if(releaseMem==CL_TRUE){
         clReleaseMemObject(input_image);
@@ -516,8 +522,14 @@ void convolution(cl_device_id &device, cl_context &context, cl_command_queue &qu
         exit(1);   
     }
 
-    ResultON = cv::Mat(YDIM, XDIM, CV_32FC1, &ResultONArray);
-    ResultOFF = cv::Mat(YDIM, XDIM, CV_32FC1, &ResultOFFArray);
+    /* cv::Mat created by array are referenced to them, performing more than one 
+    convolution in the same program would cause data corruption, for this reason
+    I perform a deep copy of temporary matrices instead */
+    cv::Mat tmpON(YDIM, XDIM, CV_32FC1, ResultONArray);
+    cv::Mat tmpOFF(YDIM, XDIM, CV_32FC1, ResultOFFArray);
+
+    ResultON = tmpON.clone();
+    ResultOFF = tmpOFF.clone();
  
     if(releaseMem==CL_TRUE){
         clReleaseMemObject(input_image);

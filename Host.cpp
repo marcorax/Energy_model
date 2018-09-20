@@ -108,7 +108,6 @@ int main() {
     /*                                                   */
     /* Simple BCS (Boundary Countour System) computation */
     /*                                                   */
-
     convolution(device, context, queue, program, kernel, Filters[0], frames_r.frames[framepos],
         BoundaryResults_on[0], BoundaryResults_off[0], CL_TRUE, CL_FALSE, conv_buffers);
 
@@ -122,17 +121,15 @@ int main() {
     convolution(device, context, queue, program, kernel, Filters[numOrientations-1], 
         BoundaryResults_on[numOrientations-1], BoundaryResults_off[numOrientations-1], CL_TRUE, conv_buffers);
 
+   
+    /* Print Results */
+    printImage("Result ON of frames : " + std::to_string(framepos), BoundaryResults_on[0], 1);
+    printImage("Result OFF of frames : " + std::to_string(framepos), BoundaryResults_off[0], 1);
 
-    cv::namedWindow("Result ON of frames : " + std::to_string(framepos), cv::WINDOW_NORMAL);
-    cv::resizeWindow("Result ON of frames : " + std::to_string(framepos), XDIM, YDIM);
-    cv::imshow("Result ON of frames : " + std::to_string(framepos), BoundaryResults_on[0]);
-    
-    cv::namedWindow("Result OFF of frames : " + std::to_string(framepos), cv::WINDOW_NORMAL);
-    cv::resizeWindow("Result OFF of frames : " + std::to_string(framepos), XDIM, YDIM);
-    cv::imshow("Result OFF of frames : " + std::to_string(framepos), BoundaryResults_off[0]);
+    for(unsigned int i = 0; i<numOrientations; i++){
+        printOnOffImages("Mixed result" + std::to_string(i+1), BoundaryResults_on[i], BoundaryResults_off[i], 1);
+    }
 
-    
-    printOnOffImages("Mixed result", BoundaryResults_on[0], BoundaryResults_off[0], 1);
 
     /* Deallocate resources */
 
