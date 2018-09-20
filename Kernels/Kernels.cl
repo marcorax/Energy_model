@@ -13,13 +13,13 @@ __kernel void convol_ker(
     int half_filter_size = additional_data[1];
     int twice_half_filter_size = additional_data[2];
     
-	const int idy = get_global_id(1);
 	const int idx = get_global_id(0);
+	const int idy = get_global_id(1);
 	const int localRowLen = twice_half_filter_size + get_local_size(0);
 	const int localRowOffset = ( get_local_id(1) + half_filter_size ) * localRowLen;
 	const int myLocal = localRowOffset + get_local_id(0) + half_filter_size;		
 		
-	// copy my pixel
+	// I cache one pixel per worker in the local memory to speed up the convolution.
 	pos_output[idx + idy*image_w] = 0;
 	neg_output[idx + idy*image_w] = 0;
 	cached[ myLocal ] = input[idx + idy*image_w];
@@ -27,22 +27,18 @@ __kernel void convol_ker(
 
 	/*
 	The pictures computed by this software have a resolution of 240x180
-	The work group size is set to be 8x8, hence the total kernel dimension is 
-	240x184
-	I might apply offsets to build a more general convolution kernel 
-	but it might worsen the readability */
+	Here I check if my current worker is looking at the borders of the image,
+	if that is the case, the worker would have to stop computing, and leave a 1 as a result
+	I need to be shure that the filter can fit the portion of the image controlled by the worker*/
 	if (
 		get_global_id(0) < half_filter_size 			|| 
 		get_global_id(0) > image_w - half_filter_size - 1  	|| 
 		get_global_id(1) < half_filter_size			|| 
-		get_global_id(1) > image_h - half_filter_size - 1  
-	)
+		get_global_id(1) > image_h - half_filter_size - 1  )
 	{
 		// no computation for me, sync and exit
-		// also checking if I'm not actually out of border
-		if(get_global_id(1) <= image_h - 1){
-			pos_output[idx + idy*image_w] = 1;
-		 	neg_output[idx + idy*image_w] = 1;}
+		pos_output[idx + idy*image_w] = 1;
+		neg_output[idx + idy*image_w] = 1;
 		barrier(CLK_LOCAL_MEM_FENCE);
 		return;
 	}
@@ -57,14 +53,14 @@ __kernel void convol_ker(
 			localColOffset = get_local_id(0);
 			globalColOffset = -half_filter_size;
 			
-			cached[ localRowOffset + get_local_id(0) ] = input[idx - half_filter_size + idy*image_w];
+			cached[ localRowOffset + get_local_id(0) ] = input[idx - globalColOffset + idy*image_w];
 		}
-		else if ( get_local_id(0) >= get_local_size(0) - half_filter_size )
+		if ( get_local_id(0) >= get_local_size(0) - half_filter_size )
 		{
 			localColOffset = get_local_id(0) + twice_half_filter_size;
 			globalColOffset = half_filter_size;
 			
-			cached[ myLocal + half_filter_size ] = input[idx + half_filter_size + idy*image_w];
+			cached[ myLocal + half_filter_size ] = input[idx + globalColOffset + idy*image_w];
 		}
 		
 		
@@ -76,13 +72,13 @@ __kernel void convol_ker(
 				cached[ get_local_id(1) * localRowLen + localColOffset ] = input[idx + globalColOffset + (idy-half_filter_size)*image_w];
 			}
 		}
-		else if ( get_local_id(1) >= get_local_size(1) -half_filter_size )
+		if ( get_local_id(1) >= get_local_size(1) -half_filter_size )
 		{
-			int offset = ( get_local_id(1) + twice_half_filter_size ) * localRowLen;
-			cached[ offset + get_local_id(0) + half_filter_size ] = input[idx + (idy+half_filter_size)*image_w];
+			int localRowOffset = ( get_local_id(1) + twice_half_filter_size ) * localRowLen;
+			cached[ localRowOffset + get_local_id(0) + half_filter_size ] = input[idx + (idy+half_filter_size)*image_w];
 			if (localColOffset >= 0)
 			{
-				cached[ offset + localColOffset ] = input[idx + globalColOffset + (idy+half_filter_size)*image_w];
+				cached[ localRowOffset + localColOffset ] = input[idx + globalColOffset + (idy+half_filter_size)*image_w];
 			}
 		}
 		
@@ -93,10 +89,10 @@ __kernel void convol_ker(
 		// perform convolution
 		int fIndex = 0;
 		float sum = (float) 0.0;
-		
+		int curRow;
 		for (int r = -half_filter_size; r <= half_filter_size; r++)
 		{
-			int curRow = r * localRowLen;
+			curRow = r * localRowLen;
 			for (int c = -half_filter_size; c <= half_filter_size; c++, fIndex++)
 			{	
 
@@ -107,7 +103,7 @@ __kernel void convol_ker(
 		
 		if(sum>0){
 			pos_output[idx + idy*image_w] = sum;}
-		else{			
+		else if(sum<0){			
 			neg_output[idx + idy*image_w] = -sum;}
 
 			

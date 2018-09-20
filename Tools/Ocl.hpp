@@ -19,10 +19,10 @@ cl_program build_program(cl_context, cl_device_id, const char*);
 void save_results(std::string, cv::Mat_<float>);
 
 void convolution(cl_device_id &device, cl_context &context, cl_command_queue &queue, cl_program &program,
-    cl_kernel &kernel, float * filter, int filtersize, float (&ResultON)[XDIM*YDIM], float (&ResultOFF)[XDIM*YDIM],
+    cl_kernel &kernel, cv::Mat_<float> &filter, cv::Mat_<float> &ResultON, cv::Mat_<float> &ResultOFF,
      int releaseMem, cl_mem (&buffers)[3]);
 
 void convolution(cl_device_id &device, cl_context &context, cl_command_queue &queue, cl_program &program,
-    cl_kernel &kernel, float * filter, int filtersize, cv::Mat_<float> &Image,
-    float (&ResultON)[XDIM*YDIM], float (&ResultOFF)[XDIM*YDIM],
+    cl_kernel &kernel, cv::Mat_<float> &filter, cv::Mat_<float> &Image,
+    cv::Mat_<float> &ResultON, cv::Mat_<float> &ResultOFF,
     int allocateMem, int releaseMem, cl_mem (&buffers)[3]); 
