@@ -83,6 +83,7 @@ int main() {
     cv::Mat_<float> BoundaryResults_on[numOrientations];
     cv::Mat_<float> BoundaryResults_off[numOrientations];
 
+    std::cout<<std::endl<<"* Loading Davis Data *"<<std::endl<<std::endl;
     
     /* Loading Davis Data */
     DAVISFrames frames_l(std::string(AEDAT_FOLDER) + std::string(FRAMES_L), XDIM, YDIM, VERBOSE);
@@ -108,23 +109,35 @@ int main() {
     /*                                                   */
     /* Simple BCS (Boundary Countour System) computation */
     /*                                                   */
+    
+    std::cout<<std::endl<<"* Setting up OpenCl and starting BCS *"<<std::endl<<std::endl;
+
     convolution(device, context, queue, program, kernel, Filters[0], frames_r.frames[framepos],
         BoundaryResults_on[0], BoundaryResults_off[0], CL_TRUE, CL_FALSE, conv_buffers);
+    auto Boundaries = BoundaryResults_on[0] + BoundaryResults_off[0];
 
     /* This overrided convolution is used to avoid to build again the buffers */
     for(unsigned int i = 1; i<numOrientations-1; i++){
     convolution(device, context, queue, program, kernel, Filters[i], 
         BoundaryResults_on[i], BoundaryResults_off[i], CL_FALSE, conv_buffers);
+    Boundaries = Boundaries + BoundaryResults_on[i] + BoundaryResults_off[i];
     }
     
     /* The last concolution have the parameter to deallocate memory set to CL_TRUE */
     convolution(device, context, queue, program, kernel, Filters[numOrientations-1], 
         BoundaryResults_on[numOrientations-1], BoundaryResults_off[numOrientations-1], CL_TRUE, conv_buffers);
+    Boundaries = Boundaries + BoundaryResults_on[numOrientations-1] + BoundaryResults_off[numOrientations-1];
 
-   
+    /* Hard tresholding the result */
+    // TODO find a more elegant solution
+    Boundaries = Boundaries - 0.3;
+
+    std::cout<<std::endl<<"* BCS computation ended *"<<std::endl<<std::endl;
+
     /* Print Results */
     printImage("Result ON of frames : " + std::to_string(framepos), BoundaryResults_on[0], 1);
     printImage("Result OFF of frames : " + std::to_string(framepos), BoundaryResults_off[0], 1);
+    printImage("Result of BCS", Boundaries/5, 1);
 
     for(unsigned int i = 0; i<numOrientations; i++){
         printOnOffImages("Mixed result" + std::to_string(i+1), BoundaryResults_on[i], BoundaryResults_off[i], 1);
